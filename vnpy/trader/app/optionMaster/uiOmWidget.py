@@ -5,6 +5,8 @@ from __future__ import division
 import os
 from datetime import datetime
 
+from six import text_type
+
 from vnpy.event import Event
 
 from .omBase import EVENT_OM_LOG
@@ -13,6 +15,7 @@ from .uiOmManualTrader import ManualTrader
 from .uiOmGreeksMonitor import GreeksMonitor
 from .uiOmVolatilityManager import VolatilityChart, VolatilityManager
 from .uiOmAnalysisManager import AnalysisManager
+from .uiOmStrategyManager import StrategyEngineManager
 
 
 ########################################################################
@@ -41,7 +44,7 @@ class OmManager(QtWidgets.QWidget):
         # 读取配置文件
         settingFileList = []
         
-        path = os.path.abspath(os.path.dirname(__file__))
+        path = os.getcwd()
         for root, subdirs, files in os.walk(path):
             for name in files:      
                 if '_portfolio.json' in name:
@@ -75,6 +78,14 @@ class OmManager(QtWidgets.QWidget):
         self.buttonAnalysisManager.clicked.connect(self.openAnalysisManager)
         self.buttonAnalysisManager.setDisabled(True)
         
+        self.buttonStrategyManager = QtWidgets.QPushButton(u'策略交易')
+        self.buttonStrategyManager.clicked.connect(self.openStrategyManager)
+        self.buttonStrategyManager.setDisabled(True)        
+        
+        self.buttonAdjustR = QtWidgets.QPushButton(u'拟合利率')
+        self.buttonAdjustR.clicked.connect(self.omEngine.adjustR)
+        self.buttonAdjustR.setDisabled(True)        
+        
         self.logMonitor = QtWidgets.QTextEdit()
         self.logMonitor.setReadOnly(True)
         
@@ -86,6 +97,8 @@ class OmManager(QtWidgets.QWidget):
         hbox.addWidget(self.buttonVolatilityChart)
         hbox.addWidget(self.buttonVolatilityManager)
         hbox.addWidget(self.buttonAnalysisManager)
+        hbox.addWidget(self.buttonStrategyManager)
+        hbox.addWidget(self.buttonAdjustR)
         hbox.addStretch()
         
         hbox2 = QtWidgets.QHBoxLayout()
@@ -101,8 +114,8 @@ class OmManager(QtWidgets.QWidget):
     #----------------------------------------------------------------------
     def initOmEngine(self):
         """初始化引擎"""
-        path = os.path.abspath(os.path.dirname(__file__))
-        fileName = unicode(self.comboSettingFile.currentText())
+        path = os.getcwd()
+        fileName = text_type(self.comboSettingFile.currentText())
         fileName = os.path.join(path, fileName)
         result = self.omEngine.initEngine(fileName)
         
@@ -123,6 +136,8 @@ class OmManager(QtWidgets.QWidget):
         self.buttonVolatilityChart.setEnabled(True)
         self.buttonVolatilityManager.setEnabled(True)
         self.buttonAnalysisManager.setEnabled(True)
+        self.buttonStrategyManager.setEnabled(True)
+        self.buttonAdjustR.setEnabled(True)
         
     #----------------------------------------------------------------------
     def writeLog(self, content, time=''):
@@ -182,7 +197,16 @@ class OmManager(QtWidgets.QWidget):
             self.widgetDict['analysisManager'].showMaximized()
         except KeyError:
             self.widgetDict['analysisManager'] = AnalysisManager(self.omEngine)
-            self.widgetDict['analysisManager'].showMaximized()     
+            self.widgetDict['analysisManager'].showMaximized()  
+            
+    #----------------------------------------------------------------------
+    def openStrategyManager(self):
+        """打开策略交易组件"""
+        try:
+            self.widgetDict['strategyManager'].showMaximized()
+        except KeyError:
+            self.widgetDict['strategyManager'] = StrategyEngineManager(self.omEngine)
+            self.widgetDict['strategyManager'].showMaximized()  
 
     #----------------------------------------------------------------------
     def close(self):
